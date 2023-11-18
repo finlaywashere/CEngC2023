@@ -19,7 +19,7 @@ public class PreProcessor {
 	public static void main(String[] args) {
 		long start = System.currentTimeMillis();
 		try {
-			new PreProcessor(new File("test_data/TA1.xml"));
+			new PreProcessor(new File("test_data/TA7.xml"));
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
