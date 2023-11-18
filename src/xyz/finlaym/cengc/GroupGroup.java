@@ -85,7 +85,14 @@ public class GroupGroup extends Group {
 	}
 	public List<Node> nodeNavInternally(Group g1, Group g2, Map<Integer, List<Node>> ways){
 		List<Group> groups = navigateInternally(g1, g2);
+		if(groups == null) {
+			System.out.println("NAVIGATION failed!");
+			return null;
+		}
 		List<Node> path = new ArrayList<Node>();
+		if(groups.size() == 1) {
+			return path;
+		}
 		Node last = null;
 		NodeGroup lastG = null;
 		for(int i = 0; i < groups.size()-1; i++) {
@@ -133,13 +140,17 @@ public class GroupGroup extends Group {
 	}
 	public List<Group> navigateInternally(Group g1, Group g2){
 		List<Group> path = new ArrayList<Group>();
+		if(g1 == g2) {
+			path.add(g1);
+			return path;
+		}
 		if(connections.containsKey(g1)) {
 			if(connections.get(g1).contains(g2)) {
 				path.add(g1);
 				path.add(g2);
 				return path;
 			}
-		} else {
+		} else if(connections.containsKey(g2)){
 			if(connections.get(g2).contains(g1)) {
 				path.add(g2);
 				path.add(g1);
@@ -149,6 +160,8 @@ public class GroupGroup extends Group {
 		for(Group g : connections.keySet()) {
 			List<Group> g3l = connections.get(g);
 			for(Group g3 : g3l) {
+				if(!connections.containsKey(g3))
+					continue;
 				if(connections.get(g3).contains(g2)) {
 					path.add(g1);
 					path.add(g3);
@@ -166,7 +179,11 @@ public class GroupGroup extends Group {
 		for(Group g : connections.keySet()) {
 			List<Group> g3l = connections.get(g);
 			for(Group g3 : g3l) {
+				if(!connections.containsKey(g3))
+					continue;
 				for(Group g4 : connections.get(g3)) {
+					if(!connections.containsKey(g4))
+						continue;
 					if(connections.get(g4).contains(g2)) {
 						path.add(g1);
 						path.add(g3);

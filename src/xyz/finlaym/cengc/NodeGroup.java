@@ -48,27 +48,12 @@ public class NodeGroup extends Group {
 			avgLat /= group.size();
 			Map<Node,List<Node>> cons = new HashMap<Node,List<Node>>();
 			for(Node n : group) {
-				boolean matches = false;
-				Node n3 = null;
 				for(Way w : n.getWays()) {
-					matches = true;
-					n3 = n;
-					for(Node n2 : group) {
-						if(n2 == n)
-							continue;
-						if(w.getNode2() == n2 || w.getNode1() == n2) {
-							matches = false;
-							n3 = null;
-							break;
-						}
-					}
-					if(matches) {
-						List<Node> nL = cons.get(n);
-						if(nL == null)
-							nL = new ArrayList<Node>();
-						nL.add(w.getNode1() == n3 ? w.getNode2() : w.getNode1());
-						cons.put(n, nL);
-					}
+					List<Node> nL = cons.get(n);
+					if(nL == null)
+						nL = new ArrayList<Node>();
+					nL.add(w.getNode1() == n ? w.getNode2() : w.getNode1());
+					cons.put(n, nL);
 				}
 			}
 			NodeGroup g = new NodeGroup(avgLat, avgLon, group, cons);
@@ -145,31 +130,68 @@ public class NodeGroup extends Group {
 	}
 	public List<Node> navigateInternally(Node n1, Node n2, Map<Integer, List<Node>> ways){
 		List<Node> path = new ArrayList<Node>();
-		List<Node> connections = ways.get(n1.getId());
-		if(connections.contains(n2)) {
-			path.add(n1);
-			path.add(n2);
-			return path;
-		}
-		for(Node n : connections) {
-			List<Node> connections2 = ways.get(n.getId());
-			if(connections2.contains(n2)) {
+		if(this.connections.containsKey(n1)) {
+			List<Node> connections = this.connections.get(n1);
+			if(connections.contains(n2)) {
 				path.add(n1);
-				path.add(n);
 				path.add(n2);
 				return path;
 			}
-		}
-		for(Node n : connections) {
-			List<Node> connections2 = ways.get(n.getId());
-			for(Node n3 : connections2) {
-				List<Node> connections3 = ways.get(n3.getId());
-				if(connections3.contains(n2)) {
+			for(Node n : connections) {
+				List<Node> connections2 = this.connections.get(n);
+				if(connections2 == null)
+					continue;
+				if(connections2.contains(n2)) {
 					path.add(n1);
 					path.add(n);
-					path.add(n3);
 					path.add(n2);
 					return path;
+				}
+			}
+			for(Node n : connections) {
+				List<Node> connections2 = this.connections.get(n);
+				if(connections2 == null)
+					continue;
+				for(Node n3 : connections2) {
+					List<Node> connections3 = this.connections.get(n3);
+					if(connections3 == null)
+						continue;
+					if(connections3.contains(n2)) {
+						path.add(n1);
+						path.add(n);
+						path.add(n3);
+						path.add(n2);
+						return path;
+					}
+				}
+			}
+		}else if(this.connections.containsKey(n2)) {
+			List<Node> connections = this.connections.get(n2);
+			if(connections.contains(n1)) {
+				path.add(n2);
+				path.add(n1);
+				return path;
+			}
+			for(Node n : connections) {
+				List<Node> connections2 = this.connections.get(n);
+				if(connections2.contains(n1)) {
+					path.add(n2);
+					path.add(n);
+					path.add(n1);
+					return path;
+				}
+			}
+			for(Node n : connections) {
+				List<Node> connections2 = this.connections.get(n);
+				for(Node n3 : connections2) {
+					List<Node> connections3 = this.connections.get(n3);
+					if(connections3.contains(n1)) {
+						path.add(n2);
+						path.add(n);
+						path.add(n3);
+						path.add(n1);
+						return path;
+					}
 				}
 			}
 		}

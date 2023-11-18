@@ -195,12 +195,14 @@ public class PreProcessor {
 		
 		System.out.println("Done pre processing optimization");
 		
-		mapPath(nodes.get(2), nodes.get(1), l1GroupMap, l2GroupMap, groups, nWays);
+		System.out.println("Final: " + mapPath(nodes.get(4), nodes.get(1), l1GroupMap, l2GroupMap, groups, nWays));
 	}
 	public List<Node> mapPath(Node n1, Node n2,Map<Integer, Set<Group>> groupNodeMap1,Map<Integer, Set<Group>> groupNodeMap2, Set<Group> groups, Map<Integer,List<Node>> ways){
 		List<Node> ret = new ArrayList<Node>();
 		Set<Group> g1 = groupNodeMap2.get(n1.getId());
 		Set<Group> g2 = groupNodeMap2.get(n2.getId());
+		if(n1 == n2)
+			return ret;
 		for(Group g : g1) {
 			for(Group g3 : g2) {
 				if(g == g3) {
@@ -208,14 +210,39 @@ public class PreProcessor {
 					GroupGroup gg = (GroupGroup) g;
 					for(Group g4 : groupNodeMap1.get(n1.getId())) {
 						for(Group g5 : groupNodeMap1.get(n2.getId())) {
-							List<Node> pathU = gg.nodeNavInternally(g, g3, ways);
+							List<Node> pathU = gg.nodeNavInternally(g4, g5, ways);
+							
 							if(pathU != null && pathU.size() > 0) {
 								// Found path
-								System.out.println(pathU);
+								List<Node> start = mapPath(n1, pathU.get(0), groupNodeMap1, groupNodeMap2, groups, ways);
+								List<Node> end = mapPath(pathU.get(pathU.size()-1), n2, groupNodeMap1, groupNodeMap2, groups, ways);
+								if(start.get(start.size()-1) == pathU.get(0)) {
+									pathU.remove(0);
+								}
+								
+								start.addAll(pathU);
+								start.addAll(end);
+								return start;
+							}else {
+								NodeGroup ng = (NodeGroup) g4;
+								pathU = ng.navigateInternally(n1, n2, ways);
+								if(pathU != null && pathU.size() > 0) {
+									// Found path
+									return pathU;
+								}
 							}
 						}
 					}
-					
+				}else {
+					GroupGroup gg1 = (GroupGroup) g;
+					GroupGroup gg2 = (GroupGroup) g3;
+					if(gg1.getConnections().containsKey(gg2)) {
+						List<Group> connections = gg1.getConnections().get(gg2);
+						
+					}else if(gg2.getConnections().containsKey(gg1)) {
+						List<Group> connections = gg2.getConnections().get(gg1);
+						
+					}
 				}
 			}
 		}
