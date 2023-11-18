@@ -18,4 +18,8 @@ public class Way {
 	public Node getNode2() {
 		return node2;
 	}
+	@Override
+	public String toString() {
+		return node1.toString() + " -> " + node2.toString();
+	}
 }
