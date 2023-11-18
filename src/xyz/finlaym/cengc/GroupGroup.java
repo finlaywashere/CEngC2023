@@ -14,9 +14,10 @@ public class GroupGroup extends Group {
 		this.connections = connections;
 	}
 
-	public Set<Group> group(List<Group> existingGroups, List<GroupWay> ways) {
+	public static Set<Group> createGroup(List<Group> existingGroups, List<GroupWay> ways) {
 		Set<Group> result = new HashSet<Group>();
 		while(existingGroups.size() > 0) {
+			System.out.println(existingGroups.size());
 			Group seed = existingGroups.get(0);
 			existingGroups.remove(0);
 			List<Group> groups = new ArrayList<Group>();
@@ -25,6 +26,8 @@ public class GroupGroup extends Group {
 				if(groups.size() >= Group.MAX_GROUP_SIZE)
 					break;
 				Group next = findNearest(existingGroups, seed);
+				if(next == null)
+					break;
 				existingGroups.remove(next);
 				groups.add(next);
 			}
@@ -50,7 +53,7 @@ public class GroupGroup extends Group {
 		}
 		return result;
 	}
-	private Group findNearest(List<Group> groups, Group group) {
+	private static Group findNearest(List<Group> groups, Group group) {
 		float dist = Float.MAX_VALUE;
 		Group near = null;
 		for(Group g : groups) {
@@ -87,5 +90,27 @@ public class GroupGroup extends Group {
 	@Override
 	public float distance(Group group) {
 		return (float) Math.sqrt(Math.pow(this.cLat-group.cLat,2) + Math.pow(this.cLon-group.cLon,2));
+	}
+
+	@Override
+	public Set<Group> group(List<Group> existingGroups, List<GroupWay> ways) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	@Override
+	public String toString() {
+		String hash = "";
+		for(Group g : this.contained) {
+			hash += "-"+g;
+		}
+		return hash;
+	}
+
+	public List<Group> getContained() {
+		return contained;
+	}
+
+	public List<Group> getConnections() {
+		return connections;
 	}
 }

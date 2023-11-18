@@ -18,7 +18,7 @@ public class PreProcessor {
 	public static void main(String[] args) {
 		long start = System.currentTimeMillis();
 		try {
-			new PreProcessor(new File("test_data/TA6.xml"));
+			new PreProcessor(new File("test_data/TA7.xml"));
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -91,6 +91,42 @@ public class PreProcessor {
 		for(Group g : initialGroups) {
 			System.out.println(g);
 		}
-		System.out.println(nodes.size() + " -> " + initialGroups.size());
+		System.out.println("I1: " + nodes.size() + " -> " + initialGroups.size());
+		List<Group> inGL = new ArrayList<Group>();
+		inGL.addAll(initialGroups);
+		List<GroupWay> ways2 = new ArrayList<GroupWay>();
+		Map<Integer, List<Group>> groupLookup = new HashMap<Integer,List<Group>>();
+		for(Group g : initialGroups) {
+			for(Node n : ((NodeGroup)g).getNodes()) {
+				List<Group> l = groupLookup.get(n.getId());
+				if(l == null)
+					l = new ArrayList<Group>();
+				l.add(g);
+				groupLookup.put(n.getId(), l);
+			}
+		}
+		List<GroupWay> groupWays = new ArrayList<GroupWay>();
+		for(Group g : initialGroups) {
+			for(Node n : ((NodeGroup)g).getConnections()) {
+				List<Group> g2l = groupLookup.get(n.getId());
+				if(g2l == null)
+					continue;
+				for(Group g2 : g2l) {
+					groupWays.add(new GroupGroupWay(g, g2));
+				}
+			}
+		}
+		Set<Group> groups = GroupGroup.createGroup(inGL, ways2);
+		for(Group g : groups) {
+			System.out.println(g);
+		}
+		System.out.println("I2: " + initialGroups.size() + " -> " + groups.size());
+		Map<Group, List<Group>> ways3 = new HashMap<Group, List<Group>>();
+		for(Group g : groups) {
+			GroupGroup gg = (GroupGroup) g;
+			for(Group c : gg.getConnections()) {
+				
+			}
+		}
 	}
 }

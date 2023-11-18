@@ -45,26 +45,24 @@ public class NodeGroup extends Group {
 			avgLon /= group.size();
 			avgLat /= group.size();
 			List<Node> cons = new ArrayList<Node>();
-			for(Way w : ways) {
+			for(Node n : group) {
 				boolean matches = false;
 				Node n3 = null;
-				for(Node n : group) {
-					if(w.getNode1() == n || w.getNode2() == n) {
-						matches = true;
-						n3 = n;
-						for(Node n2 : group) {
-							if(n2 == n)
-								continue;
-							if((w.getNode1() == n && w.getNode2() == n2) || (w.getNode2() == n && w.getNode1() == n2)) {
-								matches = false;
-								n3 = null;
-								break;
-							}
+				for(Way w : n.getWays()) {
+					matches = true;
+					n3 = n;
+					for(Node n2 : group) {
+						if(n2 == n)
+							continue;
+						if(w.getNode2() == n2 || w.getNode1() == n2) {
+							matches = false;
+							n3 = null;
+							break;
 						}
 					}
-				}
-				if(matches) {
-					cons.add(w.getNode1() == n3 ? w.getNode2() : w.getNode1());
+					if(matches) {
+						cons.add(w.getNode1() == n3 ? w.getNode2() : w.getNode1());
+					}
 				}
 			}
 			NodeGroup g = new NodeGroup(avgLat, avgLon, group, cons);
@@ -77,8 +75,8 @@ public class NodeGroup extends Group {
 		Node n = null;
 		for(Node n2 : nodes) {
 			boolean connected = false;
-			for(Way w : ways) {
-				if((w.getNode1() == n2 && w.getNode2() == node) || (w.getNode2() == n2 && w.getNode1() == node)) {
+			for(Way w : node.getWays()) {
+				if(w.getNode1() == n2 || w.getNode2() == n2) {
 					connected = true;
 					break;
 				}
@@ -129,5 +127,14 @@ public class NodeGroup extends Group {
 		}
 		return group;
 	}
+
+	public List<Node> getNodes() {
+		return nodes;
+	}
+
+	public List<Node> getConnections() {
+		return connections;
+	}
+	
 	
 }
