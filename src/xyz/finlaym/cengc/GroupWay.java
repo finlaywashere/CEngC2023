@@ -14,4 +14,11 @@ public abstract class GroupWay {
 	public Group getGroup2() {
 		return group2;
 	}
+	@Override
+	public boolean equals(Object obj) {
+		if(!(obj instanceof GroupWay))
+			return false;
+		GroupWay g = (GroupWay) obj;
+		return group1.equals(g.group1) && group2.equals(g.group2);
+	}
 }

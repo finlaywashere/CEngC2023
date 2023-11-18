@@ -1,15 +1,17 @@
 package xyz.finlaym.cengc;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class NodeGroup extends Group {
 
 	private List<Node> nodes;
-	private List<Node> connections;
-	public NodeGroup(float cLat, float cLon, List<Node> nodes, List<Node> connections) {
+	private Map<Node,List<Node>> connections;
+	public NodeGroup(float cLat, float cLon, List<Node> nodes, Map<Node,List<Node>> connections) {
 		super(cLat, cLon);
 		this.nodes = nodes;
 		this.connections = connections;
@@ -44,7 +46,7 @@ public class NodeGroup extends Group {
 			}
 			avgLon /= group.size();
 			avgLat /= group.size();
-			List<Node> cons = new ArrayList<Node>();
+			Map<Node,List<Node>> cons = new HashMap<Node,List<Node>>();
 			for(Node n : group) {
 				boolean matches = false;
 				Node n3 = null;
@@ -61,7 +63,11 @@ public class NodeGroup extends Group {
 						}
 					}
 					if(matches) {
-						cons.add(w.getNode1() == n3 ? w.getNode2() : w.getNode1());
+						List<Node> nL = cons.get(n);
+						if(nL == null)
+							nL = new ArrayList<Node>();
+						nL.add(w.getNode1() == n3 ? w.getNode2() : w.getNode1());
+						cons.put(n, nL);
 					}
 				}
 			}
@@ -98,9 +104,11 @@ public class NodeGroup extends Group {
 			return false;
 		NodeGroup g = (NodeGroup) group;
 		for(Node n : g.nodes) {
-			for(Node n2 : connections) {
-				if(n == n2)
-					return true;
+			for(List<Node> n2l : connections.values()) {
+				for(Node n2 : n2l) {
+					if(n == n2)
+						return true;
+				}
 			}
 		}
 		return false;
@@ -132,9 +140,40 @@ public class NodeGroup extends Group {
 		return nodes;
 	}
 
-	public List<Node> getConnections() {
+	public Map<Node,List<Node>> getConnections() {
 		return connections;
 	}
-	
+	public List<Node> navigateInternally(Node n1, Node n2, Map<Integer, List<Node>> ways){
+		List<Node> path = new ArrayList<Node>();
+		List<Node> connections = ways.get(n1.getId());
+		if(connections.contains(n2)) {
+			path.add(n1);
+			path.add(n2);
+			return path;
+		}
+		for(Node n : connections) {
+			List<Node> connections2 = ways.get(n.getId());
+			if(connections2.contains(n2)) {
+				path.add(n1);
+				path.add(n);
+				path.add(n2);
+				return path;
+			}
+		}
+		for(Node n : connections) {
+			List<Node> connections2 = ways.get(n.getId());
+			for(Node n3 : connections2) {
+				List<Node> connections3 = ways.get(n3.getId());
+				if(connections3.contains(n2)) {
+					path.add(n1);
+					path.add(n);
+					path.add(n3);
+					path.add(n2);
+					return path;
+				}
+			}
+		}
+		return null;
+	}
 	
 }
