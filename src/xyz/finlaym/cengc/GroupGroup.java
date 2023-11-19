@@ -9,9 +9,9 @@ import java.util.Set;
 
 public class GroupGroup extends Group {
 	private List<Group> contained;
-	private Map<Group,List<Group>> connections;
+	private Map<Group,Set<Group>> connections;
 	
-	public GroupGroup(float cLon, float cLat, List<Group> contained, Map<Group,List<Group>> connections) {
+	public GroupGroup(float cLon, float cLat, List<Group> contained, Map<Group,Set<Group>> connections) {
 		super(cLon, cLat);
 		this.contained = contained;
 		this.connections = connections;
@@ -33,7 +33,7 @@ public class GroupGroup extends Group {
 			wayMap.put(w.getGroup2(), ways2);
 		}
 		while(existingGroups.size() > 0) {
-			System.out.println(existingGroups.size());
+			//System.out.println(existingGroups.size());
 			Group seed = existingGroups.get(0);
 			existingGroups.remove(0);
 			List<Group> groups = new ArrayList<Group>();
@@ -41,7 +41,7 @@ public class GroupGroup extends Group {
 			for(int i = 0; i < Group.MAX_GROUP_SIZE; i++) {
 				if(groups.size() >= Group.MAX_GROUP_SIZE)
 					break;
-				Group next = findNearest(existingGroups, seed);
+				Group next = findNearest(existingGroups, seed, wayMap);
 				if(next == null)
 					break;
 				existingGroups.remove(next);
@@ -54,12 +54,12 @@ public class GroupGroup extends Group {
 			}
 			avgLat /= groups.size();
 			avgLon /= groups.size();
-			Map<Group,List<Group>> cons = new HashMap<Group, List<Group>>();
+			Map<Group, Set<Group>> cons = new HashMap<Group, Set<Group>>();
 			for(Group g : groups) {
 				for(Group way : wayMap.get(g)) {
-					List<Group> gL = cons.get(g);
+					Set<Group> gL = cons.get(g);
 					if(gL == null)
-						gL = new ArrayList<Group>();
+						gL = new HashSet<Group>();
 					gL.add(way);
 					cons.put(g, gL);
 				}
@@ -69,14 +69,14 @@ public class GroupGroup extends Group {
 		}
 		return result;
 	}
-	private static Group findNearest(List<Group> groups, Group group) {
+	private static Group findNearest(List<Group> groups, Group group, Map<Group, List<Group>> wayMap) {
 		float dist = Float.MAX_VALUE;
 		Group near = null;
-		for(Group g : groups) {
+		for(Group g : wayMap.get(group)) {
 			if(g == group)
 				continue;
 			float d = g.distance(group);
-			if(d < dist && g.overlaps(group)) {
+			if(d < dist) {
 				near = g;
 				dist = d;
 			}
@@ -158,7 +158,7 @@ public class GroupGroup extends Group {
 			}
 		}
 		for(Group g : connections.keySet()) {
-			List<Group> g3l = connections.get(g);
+			Set<Group> g3l = connections.get(g);
 			for(Group g3 : g3l) {
 				if(!connections.containsKey(g3))
 					continue;
@@ -177,7 +177,7 @@ public class GroupGroup extends Group {
 			}
 		}
 		for(Group g : connections.keySet()) {
-			List<Group> g3l = connections.get(g);
+			Set<Group> g3l = connections.get(g);
 			for(Group g3 : g3l) {
 				if(!connections.containsKey(g3))
 					continue;
@@ -199,7 +199,7 @@ public class GroupGroup extends Group {
 
 	@Override
 	public boolean overlaps(Group group) {
-		for(List<Group> l : connections.values()) {
+		for(Set<Group> l : connections.values()) {
 			for(Group c : l) {
 				if(!(group instanceof GroupGroup))
 					continue;
@@ -246,7 +246,7 @@ public class GroupGroup extends Group {
 		return contained;
 	}
 
-	public Map<Group,List<Group>> getConnections() {
+	public Map<Group,Set<Group>> getConnections() {
 		return connections;
 	}
 }

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class Group {
-	public static final int MAX_GROUP_SIZE = 4;
+	public static final int MAX_GROUP_SIZE = 2;
 	
 	protected float cLon;
 	protected float cLat;

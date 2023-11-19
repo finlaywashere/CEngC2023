@@ -89,9 +89,6 @@ public class PreProcessor {
 		nodesL.addAll(nodes.values());
 		System.out.println("Nodes: " + nodes.size() + ", Ways: " + ways.size());
 		Set<Group> initialGroups = NodeGroup.groupNodes(nodesL, ways);
-		for(Group g : initialGroups) {
-			System.out.println(g);
-		}
 		System.out.println("I1: " + nodes.size() + " -> " + initialGroups.size());
 		List<Group> inGL = new ArrayList<Group>();
 		inGL.addAll(initialGroups);
@@ -118,42 +115,27 @@ public class PreProcessor {
 				}
 			}
 		}
-		Set<Group> groups = GroupGroup.createGroup(inGL, groupWays);
-		for(Group g : groups) {
-			System.out.println(g);
+		Map<Integer, Set<Group>> l1GroupMap = new HashMap<Integer, Set<Group>>();
+		for(Node n : nodes.values()) {
+			List<Group> g1 = groupLookup.get(n.getId());
+			Set<Group> s1 = new HashSet<Group>();
+			s1.addAll(g1);
+			l1GroupMap.put(n.getId(), s1);
 		}
-		System.out.println("I2: " + initialGroups.size() + " -> " + groups.size());
-		Map<Group, Set<Group>> lookup2 = new HashMap<Group, Set<Group>>();
+		IterationResult i2 = doIteration(2, initialGroups.size(), groupWays, inGL, nodes, l1GroupMap);
+		IterationResult last = i2;
+		List<IterationResult> results = new ArrayList<IterationResult>();
+		results.add(i2);
+		int i = 3;
+		while(last.getGroups().size() > 1) {
+			IterationResult result = doIteration(i, last.getGroups().size(), last.getWays(), last.getGroups(), nodes, last.getGroupMap());
+			results.add(result);
+			last = result;
+			i++;
+		}
+		System.out.println("Converged on iteration " + i);
 		
-		for(Group g : groups) {
-			GroupGroup gg = (GroupGroup) g;
-			for(Group g2 : gg.getContained()) {
-				Set<Group> l = lookup2.get(g2);
-				if(l == null)
-					l = new HashSet<Group>();
-				l.add(g);
-				lookup2.put(g2, l);
-			}
-		}
-		Set<GroupWay> groupWays2 = new HashSet<GroupWay>();
-		for(Group g : groups) {
-			GroupGroup gg = (GroupGroup) g;
-			for(List<Group> g2l : gg.getConnections().values()) {
-				for(Group g2 : g2l) {
-					for(Group g3 : lookup2.get(g2)) {
-						groupWays2.add(new GroupGroupWay(g, g3));
-					}
-				}
-			}
-		}
-		List<Group> lGroups = new ArrayList<Group>();
-		for(Group g : groups) {
-			lGroups.add(g);
-		}
-		List<GroupWay> lWays2 = new ArrayList<GroupWay>();
-		for(GroupWay w : groupWays2) {
-			lWays2.add(w);
-		}
+		
 		/*Set<Group> groups2 = GroupGroup.createGroup(lGroups, lWays2);
 		for(Group g : groups2) {
 			System.out.println(g);
@@ -170,82 +152,123 @@ public class PreProcessor {
 			}
 		}*/
 		
-		Map<Integer, Set<Group>> l2GroupMap = new HashMap<Integer, Set<Group>>();
-		Map<Integer, Set<Group>> l1GroupMap = new HashMap<Integer, Set<Group>>();
-		for(Node n : nodes.values()) {
-			List<Group> g1 = groupLookup.get(n.getId());
-			Set<Group> s1 = new HashSet<Group>();
-			s1.addAll(g1);
-			l1GroupMap.put(n.getId(), s1);
-			Set<Group> g2 = new HashSet<Group>();
-			for(Group g : g1) {
-				g2.addAll(lookup2.get(g));
-			}
-			l2GroupMap.put(n.getId(), g2);
-		}
 		
-		Map<Integer, List<Node>> nWays = new HashMap<Integer, List<Node>>();
+		
+		/*Map<Integer, List<Node>> nWays = new HashMap<Integer, List<Node>>();
 		for(int i : nodeWays.keySet()) {
 			Node n1 = nodes.get(i);
 			List<Node> n = new ArrayList<Node>();
 			for(Way w : nodeWays.get(i)) {
 				n.add(w.getNode1() == n1 ? w.getNode2() : w.getNode1());
 			}
-		}
+		}*/
 		
 		System.out.println("Done pre processing optimization");
 		
-		System.out.println("Final: " + mapPath(nodes.get(4), nodes.get(1), l1GroupMap, l2GroupMap, groups, nWays));
+		System.out.println("Final: " + mapPath(nodes.get(4), nodes.get(1), l1GroupMap, results));
 	}
-	public List<Node> mapPath(Node n1, Node n2,Map<Integer, Set<Group>> groupNodeMap1,Map<Integer, Set<Group>> groupNodeMap2, Set<Group> groups, Map<Integer,List<Node>> ways){
-		List<Node> ret = new ArrayList<Node>();
-		Set<Group> g1 = groupNodeMap2.get(n1.getId());
-		Set<Group> g2 = groupNodeMap2.get(n2.getId());
-		if(n1 == n2)
-			return ret;
-		for(Group g : g1) {
-			for(Group g3 : g2) {
-				if(g == g3) {
-					// Shared group
-					GroupGroup gg = (GroupGroup) g;
-					for(Group g4 : groupNodeMap1.get(n1.getId())) {
-						for(Group g5 : groupNodeMap1.get(n2.getId())) {
-							List<Node> pathU = gg.nodeNavInternally(g4, g5, ways);
-							
-							if(pathU != null && pathU.size() > 0) {
-								// Found path
-								List<Node> start = mapPath(n1, pathU.get(0), groupNodeMap1, groupNodeMap2, groups, ways);
-								List<Node> end = mapPath(pathU.get(pathU.size()-1), n2, groupNodeMap1, groupNodeMap2, groups, ways);
-								if(start.get(start.size()-1) == pathU.get(0)) {
-									pathU.remove(0);
-								}
-								
-								start.addAll(pathU);
-								start.addAll(end);
-								return start;
-							}else {
-								NodeGroup ng = (NodeGroup) g4;
-								pathU = ng.navigateInternally(n1, n2, ways);
-								if(pathU != null && pathU.size() > 0) {
-									// Found path
-									return pathU;
-								}
-							}
-						}
-					}
-				}else {
-					GroupGroup gg1 = (GroupGroup) g;
-					GroupGroup gg2 = (GroupGroup) g3;
-					if(gg1.getConnections().containsKey(gg2)) {
-						List<Group> connections = gg1.getConnections().get(gg2);
-						
-					}else if(gg2.getConnections().containsKey(gg1)) {
-						List<Group> connections = gg2.getConnections().get(gg1);
-						
+	public IterationResult doIteration(int id, int lastSize, List<GroupWay> groupWays, List<Group> inGL, Map<Integer, Node> nodes, Map<Integer, Set<Group>> lastLookup) {
+		Set<Group> groups = GroupGroup.createGroup(inGL, groupWays);
+		System.out.println("I" + id + ": " + lastSize + " -> " + groups.size());
+		Map<Group, Set<Group>> lookup2 = new HashMap<Group, Set<Group>>();
+		
+		for(Group g : groups) {
+			GroupGroup gg = (GroupGroup) g;
+			for(Group g2 : gg.getContained()) {
+				Set<Group> l = lookup2.get(g2);
+				if(l == null)
+					l = new HashSet<Group>();
+				l.add(g);
+				lookup2.put(g2, l);
+			}
+		}
+		Set<GroupWay> groupWays2 = new HashSet<GroupWay>();
+		for(Group g : groups) {
+			GroupGroup gg = (GroupGroup) g;
+			for(Set<Group> g2l : gg.getConnections().values()) {
+				for(Group g2 : g2l) {
+					for(Group g3 : lookup2.get(g2)) {
+						groupWays2.add(new GroupGroupWay(g, g3));
 					}
 				}
 			}
 		}
+		List<Group> lGroups = new ArrayList<Group>();
+		for(Group g : groups) {
+			lGroups.add(g);
+		}
+		List<GroupWay> lWays2 = new ArrayList<GroupWay>();
+		for(GroupWay w : groupWays2) {
+			lWays2.add(w);
+		}
+		Map<Integer, Set<Group>> groupMap = new HashMap<Integer, Set<Group>>();
+		for(int i : nodes.keySet()) {
+			for(Group g : lastLookup.get(i)) {
+				Set<Group> cur = groupMap.get(i);
+				if(cur == null)
+					cur = new HashSet<Group>();
+				Set<Group> g1 = lookup2.get(g);
+				cur.addAll(g1);
+				groupMap.put(i, cur);
+			}
+		}
+		
+		return new IterationResult(lGroups, lWays2, lookup2, groupMap);
+	}
+	public List<Node> mapPath(Node n1, Node n2,Map<Integer, Set<Group>> groupNodeMap1,List<IterationResult> results){
+		List<Node> ret = new ArrayList<Node>();
+		if(n1 == n2)
+			return ret;
+		for(int i = 0; i < results.size(); i++) {
+			IterationResult result = results.get(i);
+			Set<Group> g1 = result.getGroupMap().get(n1.getId());
+			Set<Group> g2 = result.getGroupMap().get(n2.getId());
+			boolean found = false;
+			for(Group g3 : g1) {
+				if(found)
+					break;
+				for(Group g4 : g2) {
+					if(g3 == g4) {
+						// Found match
+						System.out.println("Found hit at level " + (i+2));
+						found = true;
+						break;
+					}
+				}
+			}
+			if(found)
+				break;
+		}
 		return ret;
+	}
+	public List<Group> findGroupChain(Group start, Group end, List<Group> groups){
+		List<Group> ret = new ArrayList<Group>();
+		if(start == end) {
+			ret.add(start);
+			return ret;
+		}
+		if(start instanceof GroupGroup) {
+			GroupGroup g1 = (GroupGroup) start;
+			for(Set<Group> gs : g1.getConnections().values()) {
+				for(Group g : gs) {
+					if(g == end) {
+						ret.add(start);
+						ret.add(end);
+					}
+				}
+			}
+			GroupGroup g2 = (GroupGroup) end;
+			for(Set<Group> gs : g2.getConnections().values()) {
+				for(Group g : gs) {
+					if(g == start) {
+						ret.add(end);
+						ret.add(start);
+					}
+				}
+			}
+		}
+		
+		return ret;
+			
 	}
 }

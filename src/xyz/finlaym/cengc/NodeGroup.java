@@ -24,7 +24,7 @@ public class NodeGroup extends Group {
 	public static Set<Group> groupNodes(List<Node> nodes, List<Way> ways){
 		Set<Group> groups = new HashSet<Group>();
 		while(nodes.size() > 0) {
-			System.out.println(nodes.size());
+			//System.out.println(nodes.size());
 			Node seed = nodes.get(0);
 			nodes.remove(0);
 			List<Node> group = new ArrayList<Node>();
@@ -64,16 +64,9 @@ public class NodeGroup extends Group {
 	public static Node findNearest(List<Node> nodes, Node node, List<Way> ways) {
 		float dist = Float.MAX_VALUE;
 		Node n = null;
-		for(Node n2 : nodes) {
-			boolean connected = false;
-			for(Way w : node.getWays()) {
-				if(w.getNode1() == n2 || w.getNode2() == n2) {
-					connected = true;
-					break;
-				}
-			}
-			if(!connected)
-				continue;
+		for(Way w : node.getWays()) {
+			Node n2 = w.getNode1() == node ? w.getNode2() : w.getNode1(); 
+			
 			float dist2 = (float) Math.sqrt(Math.pow(n2.getLat()-node.getLat(), 2) + Math.pow(n2.getLon()-node.getLon(), 2));
 			if(dist2 < dist) {
 				dist = dist2;
@@ -90,6 +83,14 @@ public class NodeGroup extends Group {
 		NodeGroup g = (NodeGroup) group;
 		for(Node n : g.nodes) {
 			for(List<Node> n2l : connections.values()) {
+				for(Node n2 : n2l) {
+					if(n == n2)
+						return true;
+				}
+			}
+		}
+		for(Node n : nodes) {
+			for(List<Node> n2l : g.connections.values()) {
 				for(Node n2 : n2l) {
 					if(n == n2)
 						return true;
