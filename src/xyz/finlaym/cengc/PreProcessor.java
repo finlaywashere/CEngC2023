@@ -165,7 +165,7 @@ public class PreProcessor {
 		
 		System.out.println("Done pre processing optimization");
 		
-		System.out.println("Final: " + mapPath(nodes.get(4), nodes.get(1), l1GroupMap, results));
+		System.out.println("Final: " + mapPath(nodes.get(8), nodes.get(1), l1GroupMap, results));
 	}
 	public IterationResult doIteration(int id, int lastSize, List<GroupWay> groupWays, List<Group> inGL, Map<Integer, Node> nodes, Map<Integer, Set<Group>> lastLookup) {
 		Set<Group> groups = GroupGroup.createGroup(inGL, groupWays);
@@ -245,7 +245,7 @@ public class PreProcessor {
 						System.out.println("Found hit at level " + (i+2));
 						tmp.clear();
 						tmp.addAll(((GroupGroup)g3).getContained());
-						for(int i1 = i-1; i1 > 1; i1--) {
+						for(int i1 = i-1; i1 > 0; i1--) {
 							IterationResult curR = results.get(i1-1);
 							Group src = curR.getGroupMap().get(n1.getId()).iterator().next();
 							Group dst = curR.getGroupMap().get(n2.getId()).iterator().next();
@@ -256,61 +256,50 @@ public class PreProcessor {
 								GroupGroup last = srcGG;
 								List<Group> tmpNew = new ArrayList<Group>();
 								tmpNew.add(last);
-								for(int i2 = 0; i2 < tmp.size(); i2++) {
-									GroupGroup tmpG = (GroupGroup) tmp.get(i2);
+								for(int i2 = 0; i2 < tmp.size()+1; i2++) {
+									GroupGroup curr;
+									if(i2 < tmp.size())
+										curr = (GroupGroup) tmp.get(i2);
+									else
+										curr = dstGG;
 									boolean found1 = false;
-									for(Group key : last.getConnections().keySet()) {
-										if(found1)
+									for(Group key : curr.getConnections().keySet()) {
+										Set<Group> value = curr.getConnections().get(key);
+										if(value.contains(last)) {
+											// last group connects to this group
+											tmpNew.add(key);
+											found1 = true;
 											break;
-										for(Group value : last.getConnections().get(key)) {
-											if(tmpG.getContained().contains(value)) {
-												tmpNew.add(value);
-												found1 = true;
-												break;
-											}
 										}
 									}
-									Set<Group> lastUS = results.get(i1).getLookup().get(last);
-									for(Group last2 : lastUS) {
-										GroupGroup lastU = (GroupGroup) last2;
-										for(Group group : lastU.getContained()) {
+									if(!found1 && curr.getConnections().containsKey(last)) {
+										tmpNew.add(curr.getConnections().get(last).iterator().next());
+										found1 = true;
+									}
+									if(!found1) {
+										GroupGroup lastU = (GroupGroup) results.get(i1).getLookup().get(last).iterator().next();
+										for(Group key : lastU.getConnections().keySet()) {
+											Set<Group> value = lastU.getConnections().get(key);
 											if(found1)
 												break;
-											GroupGroup groupGroup = (GroupGroup) group;
-											for(Group key : groupGroup.getConnections().keySet()) {
-												if(found1)
-													break;
-												for(Group value : groupGroup.getConnections().get(key)) {
-													if(tmpG.getContained().contains(value)) {
-														tmpNew.add(group);
-														tmpNew.add(value);
-														found1 = true;
-														break;
-													}
-												}
-											}
-										}
-										for(Group key : tmpG.getConnections().keySet()) {
-											if(found1)
-												break;
-											for(Group value : tmpG.getConnections().get(key)) {
-												if(last.getContained().contains(value)) {
-													tmpNew.add(value);
+											for(Group group : curr.getContained()) {
+												if(value.contains(group)) {
+													// last group connects to this group
+													tmpNew.add(key);
+													tmpNew.add(group);
 													found1 = true;
 													break;
 												}
 											}
 										}
-										for(Group group : lastU.getContained()) {
-											if(found1)
-												break;
-											for(Group key : tmpG.getConnections().keySet()) {
+										if(!found1) {
+											for(Group key : curr.getConnections().keySet()) {
 												if(found1)
 													break;
-												for(Group value : tmpG.getConnections().get(key)) {
-													if(tmpG.getContained().contains(group)) {
-														tmpNew.add(group);
+												for(Group value : curr.getConnections().get(key)) {
+													if(lastU.getContained().contains(value)) {
 														tmpNew.add(value);
+														tmpNew.add(key);
 														found1 = true;
 														break;
 													}
@@ -320,53 +309,20 @@ public class PreProcessor {
 									}
 									last = (GroupGroup) tmpNew.get(tmpNew.size()-1);
 								}
-								GroupGroup tmpG = dstGG;
-								boolean found1 = false;
-								for(Group key : last.getConnections().keySet()) {
-									if(found1)
-										break;
-									for(Group value : last.getConnections().get(key)) {
-										if(value == last) {
-											tmpNew.add(key);
-											found1 = true;
-											break;
-										}
-									}
-								}
-								for(Group cont : tmpG.getContained()) {
-									if(found1)
-										break;
-									GroupGroup ggCont = (GroupGroup) cont;
-									for(Group key : ggCont.getConnections().keySet()) {
-										if(found1)
-											break;
-										for(Group value : ggCont.getConnections().get(key)) {
-											if(value == last) {
-												tmpNew.add(key);
-												found1 = true;
-												break;
-											}
-										}
-									}
-								}
 								System.out.println("Old Group Size:" +tmp.size());
 								System.out.println(tmp);
 								tmp = tmpNew;
 								System.out.println("New Group Size:" +tmp.size());
 								System.out.println(tmp);
-							}else {
-								System.out.println("Node Size:" +tmp.size());
 							}
 						}
-						found = true;
-						break;
 					}
 				}
 			}
 			if(found)
 				break;
 		}
-		
+		System.out.println(tmp);
 		return ret;
 	}
 	public List<Group> findGroupChain(Group start, Group end, List<Group> groups){
