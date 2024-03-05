@@ -233,13 +233,30 @@ public class GroupGroup extends Group {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	private Set<Node> recursiveGetNodes(Group g){
+		if(g instanceof NodeGroup) {
+			Set<Node> ret = new HashSet<Node>();
+			ret.addAll(((NodeGroup)g).getNodes());
+			return ret;
+		}else {
+			GroupGroup gg = (GroupGroup) g;
+			Set<Node> ret = new HashSet<Node>();
+			for(Group group : gg.getContained()) {
+				ret.addAll(recursiveGetNodes(group));
+			}
+			return ret;
+		}
+	}
+	
 	@Override
 	public String toString() {
-		String hash = "";
-		for(Group g : this.contained) {
-			hash += "-"+g;
+		Set<Node> nodes = recursiveGetNodes(this);
+		String s = "";
+		for(Node n : nodes) {
+			s += n.getId() + ",";
 		}
-		return hash;
+		return s;
 	}
 
 	public List<Group> getContained() {

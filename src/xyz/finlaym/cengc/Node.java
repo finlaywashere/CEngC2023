@@ -30,6 +30,6 @@ public class Node {
 	}
 	@Override
 	public String toString() {
-		return "ID: " + id + ", lat: " + lat + ", lon: " + lon;
+		return id + ",";//"ID: " + id + ", lat: " + lat + ", lon: " + lon;
 	}
 }
